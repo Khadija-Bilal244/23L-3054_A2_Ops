@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="intro">
+  <h1>Was this picture made by a person with a camera, or by an AI?</h1>
+  <p>Upload a JPG, PNG, WEBP or BMP up to {{ max_mb }} MB. You get a verdict, how sure the model is, and what to keep in mind.</p>
+</section>
+<form class="upload" method="post" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+  <label class="drop" for="image" id="drop">
+    <img id="preview" alt="" hidden>
+    <span id="hint">Choose an image</span>
+  </label>
+  <input id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,image/*" required>
+  <button type="submit" id="go">Check image</button>
+</form>
+<script>
+  const input = document.getElementById('image'), prev = document.getElementById('preview'),
+        hint = document.getElementById('hint'), form = document.querySelector('form'), go = document.getElementById('go');
+  input.addEventListener('change', () => {
+    const f = input.files[0]; if (!f) return;
+    prev.src = URL.createObjectURL(f); prev.hidden = false; hint.textContent = f.name;
+  });
+  form.addEventListener('submit', () => { go.disabled = true; go.textContent = 'Checking…'; });
+</script>
+{% endblock %}

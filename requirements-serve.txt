@@ -1,0 +1,9 @@
+# Runtime for the Flask app / inference API (CPU-only TensorFlow keeps the image smaller)
+tensorflow-cpu==2.16.2
+numpy<2
+flask==3.0.3
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+pillow==10.4.0
+requests==2.32.3
+python-dotenv==1.0.1

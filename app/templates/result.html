@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Result - VisionGuard{% endblock %}
+{% block content %}
+{% set is_ai = res.label == 'ai_generated' %}
+<section class="result {{ 'ai' if is_ai else 'real' }}">
+  {% if preview %}<img class="thumb" src="{{ preview }}" alt="Uploaded image {{ name }}">{% endif %}
+  <div>
+    <p class="file">{{ name }}</p>
+    <h1>{{ 'Likely AI-generated' if is_ai else 'Likely a real photo' }}</h1>
+    <div class="meter" role="img" aria-label="Confidence {{ (res.confidence*100)|round(1) }} percent">
+      <span style="width: {{ (res.confidence*100)|round(1) }}%"></span>
+    </div>
+    <p class="conf">{{ (res.confidence*100)|round(1) }}% confident</p>
+    <p class="caveat">{{ caveat }}</p>
+    <dl class="facts">
+      <dt>Model</dt><dd>{{ res.model_name }} v{{ res.model_version }}</dd>
+      <dt>AI score</dt><dd>{{ '%.3f'|format(res.prob_ai) }}{% if res.threshold %} (cut-off {{ '%.2f'|format(res.threshold) }}){% endif %}</dd>
+      {% if res.latency_ms %}<dt>Time</dt><dd>{{ res.latency_ms }} ms</dd>{% endif %}
+    </dl>
+    <a class="btn" href="{{ url_for('index') }}">Check another image</a>
+  </div>
+</section>
+{% endblock %}

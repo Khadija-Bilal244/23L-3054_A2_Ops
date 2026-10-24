@@ -1,0 +1,14 @@
+# Task 7: run on the cloud VM (Oracle/AWS/GCP/Azure):  docker compose -f docker-compose.api.yml up -d --build
+services:
+  api:
+    build: .
+    command: ["python", "-m", "app.api"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8000"
+      INFERENCE_URL: ""
+    ports:
+      - "8000:8000"          # open TCP 8000 in the cloud firewall AND the VM firewall (ufw/iptables)
+    volumes:
+      - ./models:/models:ro

@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-ci.txt
+      - name: Lint
+        run: ruff check app src tests
+      - name: Tests
+        run: pytest -q
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t visionguard:ci .
+      # Secrets (e.g. DAGSHUB_TOKEN) live in Settings > Secrets and variables > Actions and are
+      # referenced as ${{ secrets.NAME }}; they are encrypted, masked in logs, and a value typed
+      # in this file would be public in git history.

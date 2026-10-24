@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}History - VisionGuard{% endblock %}
+{% block content %}
+<h1>History</h1>
+{% if rows %}
+<div class="scroll">
+<table>
+  <thead><tr><th>When (UTC)</th><th>File</th><th>Decision</th><th>Confidence</th><th>Model</th><th>Time</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      <td>{{ r.filename }}</td>
+      <td><span class="tag {{ 'ai' if r.label == 'ai_generated' else 'real' }}">{{ 'AI-generated' if r.label == 'ai_generated' else 'Real' }}</span></td>
+      <td>{{ (r.confidence*100)|round(1) }}%</td>
+      <td>{{ r.model_name }} v{{ r.model_version }}</td>
+      <td>{{ r.latency_ms or '-' }} ms</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty">Nothing checked yet. <a href="{{ url_for('index') }}">Check your first image.</a></p>
+{% endif %}
+{% endblock %}
