@@ -36,7 +36,7 @@ if __name__ == "__main__":
     model = tf.keras.models.load_model(a.model)
     cfg = json.load(open(a.cfg))
     size, thr = cfg["size"], cfg["threshold"]
-    df = pd.read_csv(a.csv).sample(300, random_state=0)
+    df = pd.read_csv(a.csv).sample(min(300, len(df)), random_state=0)
     good, bad = [], []
     for _, r in df.iterrows():
         img = tf.image.resize(tf.io.decode_image(tf.io.read_file(r.path), channels=3, expand_animations=False), (size, size))[None]
