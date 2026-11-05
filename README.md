@@ -1,6 +1,4 @@
-# VisionGuard (`<ROLL>_A2_Ops`)
-
-![ci](https://github.com/<user>/<ROLL>_A2_Ops/actions/workflows/ci.yml/badge.svg)
+# VisionGuard (`23l-3054_A2_Ops`)
 
 AI-generated vs real image classifier: TF/Keras + MLflow/DagsHub + Flask + Postgres + Docker + cloud API.
 
