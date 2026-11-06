@@ -21,12 +21,12 @@ def create_app(predictor=None, db=None):
     app.config["MAX_CONTENT_LENGTH"] = (Settings.MAX_UPLOAD_MB + 1) * 1024 * 1024
     logging.basicConfig(level=logging.INFO)
 
-    if predictor is None:  # remote API (Task 8) or local model (Task 4)
+    if predictor is None:
         if Settings.INFERENCE_URL:
             from app.remote import RemotePredictor
             predictor = RemotePredictor()
         else:
-            from app.inference import Predictor  # imported lazily: TensorFlow only when needed
+            from app.inference import Predictor
             predictor = Predictor()
     db = db or Database(Settings.DATABASE_URL)
     app.predictor, app.db = predictor, db
@@ -65,7 +65,6 @@ def create_app(predictor=None, db=None):
             code = 503
         return jsonify(out), code
 
-    # ---------- friendly error pages ----------
     def err(code, title, msg):
         return render_template("error.html", code=code, title=title, msg=msg), code
 
@@ -85,14 +84,12 @@ def create_app(predictor=None, db=None):
     def _500(e):
         if isinstance(e, HTTPException):
             return err(e.code, e.name, e.description)
-        log.exception("unhandled error: %s", e)  # details go to logs, not to the user
+        log.exception("unhandled error: %s", e)
         return err(500, "Something went wrong", "The verdict could not be produced. Try again in a moment.")
 
     return app
 
 
 if __name__ == "__main__":
-    # Flask's built-in server, debug OFF: debug mode exposes the interactive debugger
-    # (remote code execution if reachable) and the auto-reloader starts the app twice
-    # (the model would be loaded twice).
+    # Keep debug off to prevent debugger exposure and duplicate model loading.
     create_app().run(host="0.0.0.0", port=Settings.PORT, debug=False)

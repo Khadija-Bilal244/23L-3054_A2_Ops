@@ -3,11 +3,10 @@ python -m src.tune --trials 8
 Each trial's result is also logged to MLflow as a run (child of the tuning run).
 """
 import argparse
+import csv
+import importlib
 
-import keras_tuner as kt
-import mlflow
-import pandas as pd
-import tensorflow as tf
+tf = importlib.import_module("tensorflow")
 
 from src import config
 from src.data import make_ds
@@ -15,6 +14,24 @@ from src.models import build_transfer, compile_model, unfreeze_last_n
 
 
 def main():
+    try:
+        mlflow = importlib.import_module("mlflow")
+    except ModuleNotFoundError as exc:
+        if exc.name != "mlflow":
+            raise
+        raise RuntimeError(
+            "MLflow is required; install it with: pip install mlflow"
+        ) from exc
+
+    try:
+        kt = importlib.import_module("keras_tuner")
+    except ModuleNotFoundError as exc:
+        if exc.name != "keras_tuner":
+            raise
+        raise RuntimeError(
+            "Keras Tuner is required; install it with: pip install keras-tuner"
+        ) from exc
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=8)
     ap.add_argument("--epochs", type=int, default=5)
@@ -44,9 +61,14 @@ def main():
                 mlflow.log_params(t.hyperparameters.values)
                 mlflow.log_metric("val_loss", t.score)
             rows.append({**t.hyperparameters.values, "val_loss": t.score})
-    df = pd.DataFrame(rows)
-    df.to_csv("reports/tuner_results.csv", index=False)
-    print(df.to_string())
+    fieldnames = list(rows[0]) if rows else []
+    with open("reports/tuner_results.csv", "w", newline="", encoding="utf-8") as results_file:
+        if fieldnames:
+            writer = csv.DictWriter(results_file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+    for row in rows:
+        print(row)
     print("\nNOTE: the best val score is the max over many noisy trials -> optimistic. Re-check on test ONCE.")
 
 

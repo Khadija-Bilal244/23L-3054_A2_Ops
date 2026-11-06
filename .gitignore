@@ -1,13 +1,38 @@
+# Secrets and local configuration
 .env
+.env.*
+!.env.example
+**/access_token
+*.pem
+*.key
+.dvc/config.local
+
+# Python environments and generated files
 .venv/
+venv/
 __pycache__/
-*.pyc
-mlruns/
-mlartifacts/
-/models/*
-!/models/.gitkeep
-*.sqlite
-history.db
-.ipynb_checkpoints/
+*.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# Local data, databases, and training artifacts
+/data/raw/
+/models/*
+!/models/.gitkeep
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+mlruns/
+mlartifacts/
+/reports/tuner/
+*.log
+
+# Editor and deployment state
+.ipynb_checkpoints/
+.vercel/

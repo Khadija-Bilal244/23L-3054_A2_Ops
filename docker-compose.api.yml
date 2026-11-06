@@ -8,6 +8,8 @@ services:
     environment:
       PORT: "8000"
       INFERENCE_URL: ""
+      MODEL_PATH: /models/champion/model.keras
+      THRESHOLD_PATH: /models/champion/threshold.json
     ports:
       - "8000:8000"          # open TCP 8000 in the cloud firewall AND the VM firewall (ufw/iptables)
     volumes:

@@ -3,35 +3,33 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 BACKBONES = {
-    # name: (constructor, preprocessing layer factory)
-    # MobileNetV2 was trained on pixels scaled to [-1, 1]  -> x/127.5 - 1
+    # Each backbone uses the preprocessing it was trained with.
     "mobilenetv2": (tf.keras.applications.MobileNetV2, lambda: layers.Rescaling(1 / 127.5, offset=-1, name="preprocess")),
-    # Keras EfficientNet has its own normalisation inside; it expects raw 0-255 pixels
     "efficientnetb0": (tf.keras.applications.EfficientNetB0, lambda: layers.Identity(name="preprocess")),
 }
 
 
 def build_baseline(size=224, dropout=0.3):
     inp = layers.Input((size, size, 3), name="image")
-    x = layers.Rescaling(1 / 255.0, name="preprocess")(inp)  # 0-255 -> 0-1, keeps gradients tame
+    x = layers.Rescaling(1 / 255.0, name="preprocess")(inp)
     for i, f in enumerate([32, 64, 128, 128], 1):
-        x = layers.Conv2D(f, 3, padding="same", use_bias=False, name=f"conv{i}")(x)  # local patterns/textures
-        x = layers.BatchNormalization(name=f"bn{i}")(x)  # stabilises/speeds training
+        x = layers.Conv2D(f, 3, padding="same", use_bias=False, name=f"conv{i}")(x)
+        x = layers.BatchNormalization(name=f"bn{i}")(x)
         x = layers.ReLU(name=f"relu{i}")(x)
-        x = layers.MaxPooling2D(name=f"pool{i}")(x)  # shrink maps, add translation tolerance
-    x = layers.GlobalAveragePooling2D(name="gap")(x)  # far fewer params than Flatten+Dense
-    x = layers.Dropout(dropout, name="dropout")(x)  # regularisation
-    out = layers.Dense(1, activation="sigmoid", name="p_ai")(x)  # P(image is AI-generated)
+        x = layers.MaxPooling2D(name=f"pool{i}")(x)
+    x = layers.GlobalAveragePooling2D(name="gap")(x)
+    x = layers.Dropout(dropout, name="dropout")(x)
+    out = layers.Dense(1, activation="sigmoid", name="p_ai")(x)
     return tf.keras.Model(inp, out, name="baseline_cnn")
 
 
 def build_transfer(size=224, backbone="mobilenetv2", dropout=0.3):
     ctor, prep = BACKBONES[backbone]
     base = ctor(include_top=False, weights="imagenet", input_shape=(size, size, 3), name="backbone")
-    base.trainable = False  # stage 1: frozen feature extractor
+    base.trainable = False
     inp = layers.Input((size, size, 3), name="image")
     x = prep()(inp)
-    x = base(x, training=False)  # training=False keeps BatchNorm statistics frozen
+    x = base(x, training=False)
     x = layers.GlobalAveragePooling2D(name="gap")(x)
     x = layers.Dropout(dropout, name="dropout")(x)
     out = layers.Dense(1, activation="sigmoid", name="p_ai")(x)
@@ -63,7 +61,7 @@ def trainable_layer_names(model):
 def compile_model(model, lr):
     model.compile(
         optimizer=tf.keras.optimizers.Adam(lr),
-        loss="binary_crossentropy",  # matches the single sigmoid output
+        loss="binary_crossentropy",
         metrics=["accuracy", tf.keras.metrics.AUC(name="auc"),
                  tf.keras.metrics.Precision(name="precision"), tf.keras.metrics.Recall(name="recall")],
     )

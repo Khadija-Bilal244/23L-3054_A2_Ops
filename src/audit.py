@@ -7,7 +7,7 @@ import argparse
 import hashlib
 import os
 
-import pandas as pd
+import pandas as pd  # type: ignore[reportMissingModuleSource]
 from PIL import Image
 
 from src.config import IMG_EXT
@@ -57,6 +57,12 @@ def audit(root, ai_key="ai", real_key="real"):
 
 
 def report(df):
+    if df.empty:
+        raise ValueError(
+            "No files found under the dataset root. Populate data/raw first "
+            "(for example, run `dvc pull data/raw.dvc` from the repository root), "
+            "then rerun this audit."
+        )
     print("\n== images per class ==")
     print(df.groupby("cls").size())
     ok = df[~df.corrupt]

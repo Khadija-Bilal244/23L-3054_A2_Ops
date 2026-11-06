@@ -20,6 +20,7 @@ class RemotePredictor:
 
     def healthy(self) -> bool:
         try:
-            return requests.get(f"{self.url}/health", timeout=5).ok
+            # The hosted TensorFlow API may need several seconds for a cold start.
+            return requests.get(f"{self.url}/health", timeout=20).ok
         except requests.RequestException:
             return False

@@ -1,0 +1,14 @@
+[project]
+name = "visionguard-web"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "flask==3.0.3",
+    "sqlalchemy==2.0.30",
+    "pillow>=10.4",
+    "requests==2.32.3",
+    "python-dotenv==1.0.1",
+]
+
+[tool.vercel]
+entrypoint = "index:app"

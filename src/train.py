@@ -22,7 +22,7 @@ from src.models import (build_baseline, build_transfer, compile_model, trainable
 
 
 class MlflowEpochLogger(tf.keras.callbacks.Callback):
-    """MANUAL tracking: we decide exactly what is logged (all per-epoch metrics incl. lr)."""
+    """Log per-epoch metrics during manual tracking."""
 
     def __init__(self, offset=0):
         super().__init__()
@@ -68,7 +68,7 @@ def main():
     ap.add_argument("--deterministic", action="store_true")
     a = ap.parse_args()
 
-    tf.keras.utils.set_random_seed(a.seed)  # python, numpy and TF seeds in one call
+    tf.keras.utils.set_random_seed(a.seed)
     if a.deterministic:
         tf.config.experimental.enable_op_determinism()
     print("TensorFlow", tf.__version__, "| GPUs:", tf.config.list_physical_devices("GPU"))
@@ -97,7 +97,7 @@ def main():
                          "seed": a.seed, "tracking_mode": a.tracking, "tf_version": tf.__version__,
                          "arch": a.model if a.model == "baseline" else a.backbone})
 
-        # ---------------- stage 1 ----------------
+        # Stage 1: train the classifier head.
         model = build_baseline(a.size, a.dropout) if a.model == "baseline" else build_transfer(a.size, a.backbone, a.dropout)
         model.summary()
         c1 = f"{mdir}/stage1.keras"
@@ -105,7 +105,7 @@ def main():
         hist, ckpt_best, v_best, boundary = dict(h1), c1, v1, None
         mlflow.log_text("\n".join(trainable_layer_names(model)), "trainable_stage1.txt")
 
-        # ---------------- stage 2 (fine-tune) ----------------
+        # Stage 2: optionally fine-tune the backbone.
         if a.model == "transfer" and a.unfreeze_n > 0 and a.ft_epochs > 0:
             names = unfreeze_last_n(model, a.unfreeze_n)
             mlflow.log_text("\n".join(names), "trainable_stage2.txt")
@@ -120,10 +120,10 @@ def main():
         best_epoch = int(np.argmin(hist["val_loss"]))
         ev.save_curves(hist, best_epoch, f"{out}/curves.png", boundary)
 
-        # ---------------- evaluation ----------------
+        # Choose the threshold on validation data, then evaluate on test once.
         p_val = model.predict(val_ds, verbose=0).ravel()
-        thr = ev.choose_threshold(y_val, p_val, a.beta)  # threshold from VALIDATION only
-        p_test = model.predict(test_ds, verbose=0).ravel()  # test set touched once
+        thr = ev.choose_threshold(y_val, p_val, a.beta)
+        p_test = model.predict(test_ds, verbose=0).ravel()
         m_val, m_test = ev.metrics(y_val, p_val, thr), ev.metrics(y_test, p_test, thr)
         cm = ev.save_confusion(y_test, p_test, thr, f"{out}/confusion_matrix.png")
         ev.save_roc(y_test, p_test, f"{out}/roc_curve.png", a.run_name)
@@ -136,7 +136,7 @@ def main():
         mlflow.log_metrics({"best_epoch": best_epoch, "best_val_loss": v_best,
                             "test_real_called_fake": int(fp), "test_fake_called_real": int(fn)})
 
-        # ---------------- artifacts ----------------
+        # Save model and run artifacts.
         model.save(f"{mdir}/model.keras")
         config_json = dict(threshold=thr, size=a.size, arch=a.model, backbone=a.backbone,
                            labels=config.LABELS, beta=a.beta, run_id=run.info.run_id)
@@ -144,7 +144,7 @@ def main():
         freeze = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
         with open(f"{out}/requirements_freeze.txt", "w") as f:
             f.write(freeze)
-        mlflow.log_artifacts(out)  # curves, confusion matrix, ROC, error grid, pip list
+        mlflow.log_artifacts(out)
         mlflow.log_artifacts(a.splits, "splits")
         mlflow.log_artifact(f"{mdir}/model.keras", "model")
         mlflow.log_artifact(f"{mdir}/threshold.json", "model")
