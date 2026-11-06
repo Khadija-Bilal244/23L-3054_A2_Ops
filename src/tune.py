@@ -6,8 +6,7 @@ import argparse
 import csv
 import importlib
 
-tf = importlib.import_module("tensorflow")
-
+import tensorflow as tf
 from src import config
 from src.data import make_ds
 from src.models import build_transfer, compile_model, unfreeze_last_n
